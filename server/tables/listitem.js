@@ -1,4 +1,4 @@
-const db = require('./connection');
+const db = require('../database/connection');
 
 function create(req) {
     return new Promise((resolve, reject) => {

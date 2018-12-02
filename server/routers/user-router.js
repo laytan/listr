@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const user = require('../tables/user');
+
 //Handles sign up requests
 router.post('/signup', (req, res, next) => {
     console.log('Post request on /user/signup');
@@ -19,7 +21,7 @@ router.post('/signup', (req, res, next) => {
     //Check if the username is free
     user.getUserByUserName(user_name)
     .then(userObj => {
-        if(userObj) {
+        if(userObj.length > 0) {
             res.status(409);
             throw new Error("Username in use.");
         }
@@ -27,7 +29,14 @@ router.post('/signup', (req, res, next) => {
             user.hashPassword(user_password)
             .then(hashedPassword => user.insert(user_name, hashedPassword))
             .then(response => user.getUserById(response.insertId))
-            .then(queriedUser => res.json(queriedUser))
+            .then(queriedUser => {
+                const payload = {
+                    "user_id": queriedUser.user_id,
+                    "user_name": queriedUser.user_name,
+                }
+                return user.signToken(payload);
+            })
+            .then(token => res.json({"token": token, "message": "succes"}))
             .catch(next);
         }
     })
@@ -48,7 +57,7 @@ router.post('/signup', (req, res, next) => {
 });
 
 //Handles login requests
-router.post('/login', (req, res) => {
+router.post('/login', (req, res, next) => {
     console.log('Post request on /user/login');
     console.log(req.body);
     user.login(req.body)
@@ -58,54 +67,9 @@ router.post('/login', (req, res) => {
         res.json({ 
             "token": result,
          });
-    }, error => {
-        console.log("Got back error from login");
-        console.log(error);
-        res.json({
-            error,
-        });
-    });
+    })
+    .catch(next);
 
-});
-
-router.get('/:id', async (req, res, next) => {
-    console.log('Get request on /user/:id');
-    //console.log(req.params.id);
-    //let { id } = req.params;
-    let id = 2;
-    /*if(!id) {
-        console.log("no id");
-        res.status(422);
-        throw new Error("No id given");
-    }
-    else if(!Number(id)) {
-        console.log("no id 2");
-        res.status(422);
-        throw new Error("Id not valid.");
-    }
-    else {*/
-        console.log("proceed");
-        try {
-            const theUser = await user.getUserById(id);
-            console.log(theUser);
-            res.json(theUser);
-        } catch(err) {
-            console.log("error");
-            console.log(err);
-            res.status(500);
-            next(err);
-        }
-        /*user.getUserById(id)
-        .then(theUser => {
-            console.log(theUser);
-            res.json(theUser[0]);  
-        })
-        .catch(err => {
-            console.log(err);
-            console.log("caught");
-            next(err);
-        });*/
-    //}
 });
 
 module.exports = router;

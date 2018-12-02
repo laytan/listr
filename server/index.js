@@ -8,9 +8,8 @@ const app = express();
 
 const middleware = require('./middleware');
 
-const user = require('./database/user');
-const authorized = require('./authorized-router');
-const userRoutes = require('./user-router');
+const authorized = require('./routers/authorized');
+const userRoutes = require('./routers/user-router');
 
 //Sets allowed origins
 app.use(cors({

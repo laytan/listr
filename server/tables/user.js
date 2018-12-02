@@ -1,4 +1,4 @@
-const db = require('./connection');
+const db = require('../database/connection');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -68,7 +68,7 @@ function login( body ) {
             if(!password) return reject(new Error("Invalid credentials"));
 
             res = await getUserByUserName(userName);
-            if(res.length !== 1) return (new Error("Invalid credentials"));
+            if(res.length !== 1) return reject(new Error("Invalid credentials"));
 
             const user = res[0];
 
@@ -88,16 +88,27 @@ function login( body ) {
                 "user_id": user.user_id,
                 "user_name": user.user_name
             }
-            //Generate a token, and send it back
-            jwt.sign( payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
-                if(err) return reject(err);
+
+            signToken(payload)
+            .then((token) => {
                 return resolve(token);
-            });
+            })
+            .catch((err) => reject(err));
+    
         } catch( err ) {
             return reject(err);
         }
     })
 }   
+
+function signToken(payload) {
+    return new Promise((resolve, reject) => {
+        jwt.sign(payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
+            if(err) return reject(err);
+            return resolve(token);
+        })
+    });
+}
 
 //Add a column with loginattempts, default 0
 //Everytime an attempt is made to login and it's unsuccesfull add 1 to it
@@ -187,7 +198,7 @@ function validatePassword(password) {
 function getUserByUserName(user_name) {
     return new Promise(async (resolve, reject) => {
         [err, user] = await to(queryPromise('SELECT * FROM user WHERE user_name = ?', user_name));
-        if(err) return reject({ "error": err });
+        if(err) return reject(err);
 
         return resolve(user);
     });
@@ -225,4 +236,5 @@ module.exports = {
     insert,
     hashPassword,
     getUserById,
+    signToken
 }

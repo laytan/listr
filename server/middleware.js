@@ -37,7 +37,7 @@ function ifTokenSetUser(req, res, next) {
  * 
  * Middleware that is used on all the authorized routes.
  * 
- * It checks if req.user is set by our <ifTokenSetUser> Middleware. 
+ * It checks if req.user is set by our <ifTokenSetUser> Middleware.
  * if it is proceed, else call next with an unauthorized request error.
  * 
  */
