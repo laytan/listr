@@ -21,39 +21,28 @@ router.post('/signup', (req, res, next) => {
     //Check if the username is free
     user.getUserByUserName(user_name)
     .then(userObj => {
+        //If there is a user with that name throw an error,
+        //After an error is thrown it goes right to the catch
         if(userObj.length > 0) {
             res.status(409);
             throw new Error("Username in use.");
-        }
-        else {
-            user.hashPassword(user_password)
-            .then(hashedPassword => user.insert(user_name, hashedPassword))
-            .then(response => user.getUserById(response.insertId))
-            .then(queriedUser => {
-                const payload = {
-                    "user_id": queriedUser.user_id,
-                    "user_name": queriedUser.user_name,
-                }
-                return user.signToken(payload);
-            })
-            .then(token => res.json({"token": token, "message": "succes"}))
-            .catch(next);
-        }
+        }        
+        //If the username is not in use continue with signing up
+        return user.hashPassword(user_password);
     })
-    .catch(next);
-    /*.then(hashedPassword => {
-        console.log(hashedPassword);
-        return hashedPassword;
-    });*/
-    /*user.create(req.body)
-    .then( (result) => {
-        console.log(result);
-        if( result.error ) res.json( { "error": result.error } );
-        else res.json({"insertId": result.insertId});
-    }, (error) => {
-        console.log(error);
-        res.json({"error": error});
-    });*/
+    .then(hashedPassword => user.insert(user_name, hashedPassword)) //Inserts into the db
+    .then(response => user.getUserById(response.insertId)) //Gets the newly inserted user
+    .then(queriedUser => {
+        //Sign a token with the users information,
+        //so that the client can log them in right after the sign up process
+        const payload = {
+            "user_id": queriedUser.user_id,
+            "user_name": queriedUser.user_name,
+        }
+        return user.signToken(payload);
+    })
+    .then(token => res.json({"token": token, "message": "succesfully signed up!"})) //Respond with the token and a succes message
+    .catch(next); //Any error we get goes right to our errorhandler
 });
 
 //Handles login requests
