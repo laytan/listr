@@ -1,5 +1,17 @@
 const jwt = require('jsonwebtoken');
 
+/**
+ * Function: ifTokenSetUser
+ * 
+ * Middleware that checks if there is an authorization header, if there is it:
+ * 
+ * -  Extracts the token
+ * -  Verifies the token
+ * -  Sets the req.user object to the extracted user
+ * -  Calls next() to proceed to the next middleware
+ * 
+ * If anything fails or there is no authorization set it calls next()
+ */
 function ifTokenSetUser(req, res, next) {
     const authHeader = req.get('authorization');
     if (authHeader) {
@@ -20,6 +32,15 @@ function ifTokenSetUser(req, res, next) {
   }
 }
 
+/**
+ * Function: isAuthorized
+ * 
+ * Middleware that is used on all the authorized routes.
+ * 
+ * It checks if req.user is set by our <ifTokenSetUser> Middleware. 
+ * if it is proceed, else call next with an unauthorized request error.
+ * 
+ */
 function isAuthorized(req, res, next) {
     if(req.user) {
         next();
@@ -30,6 +51,11 @@ function isAuthorized(req, res, next) {
     }
 }
 
+/**
+ * Function: errorHandler
+ * 
+ * Handles every error that's called by using next() in our routes / middleware
+ */
 function errorHandler(err, req, res, next) {
     res.status(res.statusCode || 500);
     res.json({

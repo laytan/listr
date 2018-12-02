@@ -75,7 +75,7 @@ function login( body ) {
                 "user_name": user.user_name
             }
             //Generate a token, and send it back
-            jwt.sign( payload, process.env.SECRET, { expiresIn: 120 }, (err, token) => {
+            jwt.sign( payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
                 if(err) return reject("Invalid credentials6");
                 return resolve(token);
             });

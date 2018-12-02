@@ -1,0 +1,1 @@
+NDSearch.OnPrefixDataLoaded("isa",["Function"],[["isAuthorized",,[[,,,,0,"File:server/middleware.js:isAuthorized"]]]]);
