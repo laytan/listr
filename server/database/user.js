@@ -19,16 +19,16 @@ function create(body) {
 
         //Get user associated with this username
         [err, user] = await to(getUserByUserName(userName));
-        if(err) return reject({ "error": err });
+        if(err) return reject(err);
         //If there is a user with this name
         if (user.length > 0) return resolve({ "error": "User exists" });
         //Hash the password
         [err, hash] = await to(hashPassword(userPassword));
-        if(err) return reject({ "error": err });
+        if(err) return reject(err);
         //Insert into the db
         [err, newUser] = await to(queryPromise('INSERT INTO user (user_name, user_hash, user_created) VALUES( ?, ?, ? );',
             [userName, hash, date]));
-        if(err) return reject({ "error": err });
+        if(err) return reject(err);
 
         //Return the database response
         return resolve(newUser); 
@@ -62,23 +62,23 @@ function login( body ) {
         try {
             //Validate the request
             const userName = validateName(body.user_name) ? body.user_name : false;
-            if(!userName) return reject("Invalid credentials1" );
+            if(!userName) return reject(new Error("Invalid credentials"));
 
             const password = validatePassword(body.user_password) ? body.user_password : false;
-            if(!password) return reject("Invalid credentials2");
+            if(!password) return reject(new Error("Invalid credentials"));
 
             res = await getUserByUserName(userName);
-            if(res.length !== 1) return reject("Invalid credentials 3");
+            if(res.length !== 1) return (new Error("Invalid credentials"));
 
             const user = res[0];
 
             const allowed = await allowedToLogin(userName);
-            if(allowed === false) return reject("Maximum login attempts exceeded");
+            if(allowed === false) return reject(new Error("Maximum login attempts exceeded"));
 
             const valid = await bcrypt.compare(password, user.user_hash);
             if(valid === false) {
                 await addToLoginAttempt(userName);
-                return reject("Invalid credentials 5");
+                return reject(new Error("Invalid credentials"));
             } 
 
             await resetAttempts(userName);
@@ -90,12 +90,11 @@ function login( body ) {
             }
             //Generate a token, and send it back
             jwt.sign( payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
-                if(err) return reject("Invalid credentials6");
+                if(err) return reject(err);
                 return resolve(token);
             });
         } catch( err ) {
-            console.log(err);
-            return reject("Invalid credentials7");
+            return reject(err);
         }
     })
 }   
