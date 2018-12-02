@@ -31,8 +31,8 @@ app.get('/', (req, res) => {
     });
 });
 
-//app.use('/user', userRoutes);
-//app.use('/authorized', authorized);
+app.use('/user', userRoutes);
+app.use('/authorized', authorized);
 
 
 function notFound(req, res, next) {
