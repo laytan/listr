@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
+const connection = require('../database/connection');
 const user = require('../tables/user');
 
-//Handles sign up requests
-router.post('/signup', (req, res, next) => {
-    console.log('Post request on /user/signup');
+const signup = async (req, res, next) => {
+    console.log('Request on signup');
     //Extract the needed variables
     const { user_name, user_password } = req.body;
     //Validate input
@@ -17,34 +17,33 @@ router.post('/signup', (req, res, next) => {
         res.status(422);
         throw new Error("Password is not valid.");
     }
+    //Check if the username is in use
+    const userObj = await user.getUserByUserName(user_name);
+    if(userObj.length > 0) {
+        res.status(409);
+        throw new Error("Username is in use.");
+    }
+    //Hash the password
+    const hashedPassword = await user.hashPassword(user_password);
+    //Insert user in the db
+    const insertId = await user.insert(user_name, hashedPassword);
+    //Payload to be sent in the token
+    const payload = {
+        "user_id": insertId,
+        "user_name": user_name,
+    }
+    //Make a token and respond with it
+    const token = await user.signToken(payload);
+    res.json({
+        "token": token,
+        "message": "Succesfully signed up!",
+    });
+}
+//Handles sign up requests
+//connection.catcherrors basically returns the function we pass with a catch block 
+//that passes any error it raises to our errorhandler
+router.post('/signup', connection.catchErrors(signup));
     
-    //Check if the username is free
-    user.getUserByUserName(user_name)
-    .then(userObj => {
-        //If there is a user with that name throw an error,
-        //After an error is thrown it goes right to the catch
-        if(userObj.length > 0) {
-            res.status(409);
-            throw new Error("Username in use.");
-        }        
-        //If the username is not in use continue with signing up
-        return user.hashPassword(user_password);
-    })
-    .then(hashedPassword => user.insert(user_name, hashedPassword)) //Inserts into the db
-    .then(response => user.getUserById(response.insertId)) //Gets the newly inserted user
-    .then(queriedUser => {
-        //Sign a token with the users information,
-        //so that the client can log them in right after the sign up process
-        const payload = {
-            "user_id": queriedUser.user_id,
-            "user_name": queriedUser.user_name,
-        }
-        return user.signToken(payload);
-    })
-    .then(token => res.json({"token": token, "message": "succesfully signed up!"})) //Respond with the token and a succes message
-    .catch(next); //Any error we get goes right to our errorhandler
-});
-
 //Handles login requests
 router.post('/login', (req, res, next) => {
     console.log('Post request on /user/login');
