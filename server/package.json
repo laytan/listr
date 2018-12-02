@@ -4,9 +4,9 @@
   "description": "The server for listr",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "document": "D:/Programmas/NaturalDocs/NaturalDocs.exe -i D:/layta/Documents/Projecten/listr -o html D:/layta/Documents/Projecten/listr/documentation -p D:/layta/Documents/Projecten/listr/ND config"
   },
   "repository": {
     "type": "git",

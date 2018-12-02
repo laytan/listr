@@ -35,6 +35,20 @@ function create(body) {
         
     });
 }
+
+function insert(name, hash) {
+    return new Promise((resolve, reject) => {
+        queryPromise('INSERT INTO user(user_name, user_hash, user_created) VALUES(?, ?, ?);', [name, hash, new Date().getTime()])
+        .then(result => {
+            const { insertId } = result;
+            return resolve({ "insertId": insertId });
+        })
+        .catch(err => {
+            return reject(err);
+        });
+    });
+}
+
 //validates username, returns if not valid
 //validates password, returns if not valid
 //Tries to get the user, returns if there isn't a user with that name
@@ -180,6 +194,19 @@ function getUserByUserName(user_name) {
     });
 }
 
+function getUserById(user_id) {
+    return new Promise((resolve, reject) => {
+        queryPromise('SELECT * FROM user WHERE user_id = ?', user_id)
+        .then(user => {
+            return resolve(user);
+        })
+        .catch(err => {
+            console.log("erorr");
+            return reject(err);
+        });
+    });
+}
+
 function hashPassword(password) {
     return new Promise(async (resolve, reject) => {
         const saltRounds = 15;
@@ -193,4 +220,10 @@ function hashPassword(password) {
 module.exports = {
     create,
     login,
+    validateName,
+    validatePassword,
+    getUserByUserName,
+    insert,
+    hashPassword,
+    getUserById,
 }

@@ -1,11 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+
 require('dotenv').config();
+
+const app = express();
+
+const middleware = require('./middleware');
+
 const user = require('./database/user');
 const authorized = require('./authorized-router');
-const middleware = require('./middleware');
-const app = express();
+const userRoutes = require('./user-router');
 
 //Sets allowed origins
 app.use(cors({
@@ -18,47 +23,36 @@ app.use(bodyParser.json());
 //Decodes token if it is set
 app.use(middleware.ifTokenSetUser);
 
-//Handles sign up requests
-app.post('/user/signup', (req, res) => {
-    console.log('Post request on /user/signup');
-    user.create(req.body)
-    .then( (result) => {
-        console.log(result);
-        if( result.error ) res.json( { "error": result.error } );
-        else res.json({"insertId": result.insertId});
-    }, (error) => {
-        console.log(error);
-        res.json({"error": error});
+
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Welcome to Listr!',
+        user: req.user,
     });
 });
 
-//Handles login requests
-app.post('/user/login', (req, res) => {
-    console.log('Post request on /user/login');
-    console.log(req.body);
-    user.login(req.body)
-    .then( result => {
-        console.log("Got back succes from login");
-        console.log(result);
-        res.json({ 
-            "token": result,
-         });
-    }, error => {
-        console.log("Got back error from login");
-        console.log(error);
-        res.json({
-            error,
-        });
+//app.use('/user', userRoutes);
+//app.use('/authorized', authorized);
+
+
+function notFound(req, res, next) {
+    console.log("Not found");
+    res.status(404);
+    const error = new Error('Not found - ' + req.originalUrl);
+    next(error);
+}
+
+function errorHandler(err, req, res, next) {
+    console.log("Error handler");
+    res.status(res.statusCode || 500);
+    res.json({
+        message: err.message,
+        stack: err.stack
     });
+}
 
-});
-
-//Loads the /authorized endpoint
-app.use('/authorized', authorized);
-
-//Has to be the last use in the app, handles all the errors
-app.use(middleware.errorHandler);
-
+app.use(notFound);
+app.use(errorHandler);
 
 const port = process.env.PORT || 1234;
 app.listen(port, () => {

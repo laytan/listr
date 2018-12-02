@@ -19,7 +19,7 @@ function ifTokenSetUser(req, res, next) {
       if (token) {
         jwt.verify(token, process.env.SECRET, (error, user) => {
           if (error) {
-            next();
+            console.log(error);
           }  
           req.user = user;
           next();
@@ -51,20 +51,7 @@ function isAuthorized(req, res, next) {
     }
 }
 
-/**
- * Function: errorHandler
- * 
- * Handles every error that's called by using next() in our routes / middleware
- */
-function errorHandler(err, req, res, next) {
-    res.status(res.statusCode || 500);
-    res.json({
-        "error": err.message,
-    });
-}
-
 module.exports = {
     isAuthorized,
-    ifTokenSetUser,
-    errorHandler
+    ifTokenSetUser
 }
