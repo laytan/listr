@@ -64,7 +64,7 @@ function getAll(req) {
         db.queryPromise('SELECT * FROM list WHERE user_id = ?', id)
         .then((res) => {
             lists = res;
-            return db.('SELECT * FROM list_item WHERE user_id = ?', id);
+            return db.queryPromise('SELECT * FROM list_item WHERE user_id = ?', id);
         })
         .then((list_items) => {
             lists.forEach(list => {
