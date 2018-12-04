@@ -1,44 +1,9 @@
 const db = require('../database/connection');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-
-//calback gets (error, result),
-//Error: false by default, a json object if there is an error
-//Result: null by default, a json object with the db result when the user is inserted
-function create(body) {
-    return new Promise(async (resolve, reject) => {
-        const date = new Date().getTime();
-        const userName = body.user_name;
-        const userPassword = body.user_password;
-        if (!validateName(userName)) {
-            return resolve({ "error": "username not valid" });
-        }
-        if (!validatePassword(userPassword)) {
-            return resolve({ "error": "password not valid" });
-        }
-
-        //Get user associated with this username
-        [err, user] = await to(getUserByUserName(userName));
-        if(err) return reject(err);
-        //If there is a user with this name
-        if (user.length > 0) return resolve({ "error": "User exists" });
-        //Hash the password
-        [err, hash] = await to(hashPassword(userPassword));
-        if(err) return reject(err);
-        //Insert into the db
-        [err, newUser] = await to(queryPromise('INSERT INTO user (user_name, user_hash, user_created) VALUES( ?, ?, ? );',
-            [userName, hash, date]));
-        if(err) return reject(err);
-
-        //Return the database response
-        return resolve(newUser); 
-        
-    });
-}
 
 function insert(name, hash) {
     return new Promise((resolve, reject) => {
-        queryPromise('INSERT INTO user(user_name, user_hash, user_created) VALUES(?, ?, ?);', [name, hash, new Date().getTime()])
+        db.queryPromise('INSERT INTO user(user_name, user_hash, user_created) VALUES(?, ?, ?);', [name, hash, new Date().getTime()])
         .then(result => {
             const { insertId } = result;
             return resolve({ "insertId": insertId });
@@ -49,133 +14,34 @@ function insert(name, hash) {
     });
 }
 
-//validates username, returns if not valid
-//validates password, returns if not valid
-//Tries to get the user, returns if there isn't a user with that name
-//Checks if this user is allowed to login, returns if he isn't
-//Adds a login attempt
-//Checks the password, returns if invalid
-//Resets the login attempts
-//Signs a token and sends it back
-function login( body ) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            //Validate the request
-            const userName = validateName(body.user_name) ? body.user_name : false;
-            if(!userName) return reject(new Error("Invalid credentials"));
-
-            const password = validatePassword(body.user_password) ? body.user_password : false;
-            if(!password) return reject(new Error("Invalid credentials"));
-
-            res = await getUserByUserName(userName);
-            if(res.length !== 1) return reject(new Error("Invalid credentials"));
-
-            const user = res[0];
-
-            const allowed = await allowedToLogin(userName);
-            if(allowed === false) return reject(new Error("Maximum login attempts exceeded"));
-
-            const valid = await bcrypt.compare(password, user.user_hash);
-            if(valid === false) {
-                await addToLoginAttempt(userName);
-                return reject(new Error("Invalid credentials"));
-            } 
-
-            await resetAttempts(userName);
-                
-            //Define the payload
-            const payload = {
-                "user_id": user.user_id,
-                "user_name": user.user_name
-            }
-
-            signToken(payload)
-            .then((token) => {
-                return resolve(token);
-            })
-            .catch((err) => reject(err));
-    
-        } catch( err ) {
-            return reject(err);
-        }
-    })
-}   
-
-function signToken(payload) {
-    return new Promise((resolve, reject) => {
-        jwt.sign(payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
-            if(err) return reject(err);
-            return resolve(token);
-        })
-    });
-}
-
-//Add a column with loginattempts, default 0
-//Everytime an attempt is made to login and it's unsuccesfull add 1 to it
-//Add a set number stop them from making login attempts
-//On a succesfull login, set count to 0 again
-
-//Check difference between last updated and 'now' and see if enough time has passed
-//If so, set the count to 0
-//Else don't let them login
-
 function resetAttempts(username) {
     console.log("Resetting the login attempts");
-    return queryPromise('UPDATE user SET user_attempts = 0, user_updated = ? WHERE user_name = ?', [new Date().getTime(), username]);
+    return db.queryPromise('UPDATE user SET user_attempts = 0, user_updated = ? WHERE user_name = ?', [new Date().getTime(), username]);
 }
 
 function addToLoginAttempt(username) {
     console.log("Adding 1 to the login attempts");
-    return queryPromise('UPDATE user SET user_attempts = user_attempts + 1, user_updated = ? WHERE user_name = ?', [new Date().getTime(), username]);
+    return db.queryPromise('UPDATE user SET user_attempts = user_attempts + 1, user_updated = ? WHERE user_name = ?', [new Date().getTime(), username]);
 }
 
-function allowedToLogin(username) {
+function allowedToLogin(user) {
     console.log("Checking if the user is allowed to login");
-    return new Promise((resolve, reject) => {
-        queryPromise('SELECT user_attempts, user_updated FROM user WHERE user_name = ?', username)
-        .then( res => {
-            console.log(res);
-            const attempts = res[0].user_attempts;
-            let updated = res[0].user_updated;
-            if(updated) {
-                const now = new Date().getTime();
-                const difference = (now - updated) / 1000;
-                //5 minutes
-                console.log(difference);
-                if(difference > 300) {
-                    return resolve(true);
-                }
-            }
-            //Reset attempts
-            if(attempts > 5) return resolve(false);
-            return resolve(true);
-        })
-        .then( res => {
-            return resolve(true);
-        })
-        .catch( err => {
-            return reject(err);
-        });
-    });
-}
-
-function queryPromise(sql, args) {
-    return new Promise((resolve, reject) => {
-        db.mysqlConnection.query(sql, args, (err, res, fields) => {
-            if (err) {
-                return reject(err);
-            } else {
-                return resolve(res);
-            }
-        });
-    });
-}
-
-function to(promise) {
-    return promise.then(data => {
-        return [null, data];
-     })
-     .catch(err => [err]);
+    //Get the needed variables from the user object
+    const { updated, attempts } = user;
+    //If we have ever set updated
+    if(updated) {
+        const now = new Date().getTime();
+        //The difference between now and the last time we updated in seconds
+        const difference = (now - updated) / 1000;
+        //If the last login attempt was more than 5 minutes ago, the login is valid
+        if(difference > 300) return true;
+        //If they tryed to login more than 5 times in a row, they are locked out
+        else if(attempts > 5) return difference;
+        //If that's not the case they can try logging in
+        else return true;
+    }    
+    //Not updated, so no login request has ever been made, so they are allowed to login
+    else return true;
 }
 
 //Alphanumeric and digits, between 3 and 50 characters and no whitespace
@@ -197,16 +63,16 @@ function validatePassword(password) {
 
 function getUserByUserName(user_name) {
     return new Promise(async (resolve, reject) => {
-        [err, user] = await to(queryPromise('SELECT * FROM user WHERE user_name = ?', user_name));
+        [err, user] = await to(db.queryPromise('SELECT * FROM user WHERE user_name = ?', user_name));
         if(err) return reject(err);
 
         return resolve(user);
     });
 }
 
-function getUserById(user_id) {
+/*function getUserById(user_id) {
     return new Promise((resolve, reject) => {
-        queryPromise('SELECT * FROM user WHERE user_id = ?', user_id)
+        db.queryPromise('SELECT * FROM user WHERE user_id = ?', user_id)
         .then(user => {
             return resolve(user);
         })
@@ -215,7 +81,7 @@ function getUserById(user_id) {
             return reject(err);
         });
     });
-}
+}*/
 
 function hashPassword(password) {
     return new Promise(async (resolve, reject) => {
@@ -228,13 +94,13 @@ function hashPassword(password) {
 }
 
 module.exports = {
-    create,
-    login,
     validateName,
     validatePassword,
     getUserByUserName,
     insert,
     hashPassword,
-    getUserById,
-    signToken
+    signToken,
+    allowedToLogin,
+    addToLoginAttempt,
+    resetAttempts
 }

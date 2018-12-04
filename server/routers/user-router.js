@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const bcrypt = require('bcrypt');
+
 const connection = require('../database/connection');
 const user = require('../tables/user');
 
@@ -43,21 +45,56 @@ const signup = async (req, res, next) => {
 //connection.catcherrors basically returns the function we pass with a catch block 
 //that passes any error it raises to our errorhandler
 router.post('/signup', connection.catchErrors(signup));
-    
-//Handles login requests
-router.post('/login', (req, res, next) => {
-    console.log('Post request on /user/login');
-    console.log(req.body);
-    user.login(req.body)
-    .then( result => {
-        console.log("Got back succes from login");
-        console.log(result);
-        res.json({ 
-            "token": result,
-         });
-    })
-    .catch(next);
+ 
+//Called by the /users/signup route
+const login = async (req, res, next) => {
+    console.log('Request on login');
+    //Extract login fields
+    const { user_name, user_password } = req.body;
+    //Check if the input is valid
+    if(!user.validateName(user_name) || !user.validatePassword(user_password)) {
+        res.status(401);
+        throw new Error("Invalid credentials");
+    }
+    //Check if the username is in use
+    const userObj = await user.getUserByUserName(user_name);
+    if(userObj.length != 1) {
+        res.status(401);
+        throw new Error("Invalid credentials");
+    }
+    const user = userObj[0];
+    //Check if the user is allowed to login (Time since last login / Is locked out)
+    //Returns the time that the user can login next or true if the user is allowed
+    const allowedToLogin = user.allowedToLogin(user);
+    if(allowedToLogin !== true) {
+        res.status(400);
+        throw new Error(`Maximum login attempts reached.
+        Please wait: ${allowedToLogin} seconds before trying again.`);
+    }
 
-});
+    //Let bcrypt compare the password
+    const validPassword = await bcrypt.compare(user_password, user.user_hash);
+    if(!validPassword) {
+        //If it's not valid we add an attempt to the logins
+        await user.addToLoginAttempt(user_name);
+        res.status(401);
+        throw new Error("Invalid credentials");
+    }
+    //If it's valid we reset the attempts
+    await user.resetAttempts(user_name);
+
+    //Sign token with the payload and send it to the user
+    const payload = {
+        "user_id": user.user_id,
+        "user_name": user.user_name,
+    }
+    const token = await user.signToken(payload);
+    res.json({
+        "token": token,
+        "message": "succes",
+    });
+}
+//Handles login requests
+router.post('/login', connection.catchErrors(login));
 
 module.exports = router;

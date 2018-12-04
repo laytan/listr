@@ -21,10 +21,10 @@ function create(req) {
             }
         }
 
-        queryPromise('INSERT INTO list(list_title, list_description, user_id) VALUES(?,?,?);',
+        db.queryPromise('INSERT INTO list(list_title, list_description, user_id) VALUES(?,?,?);',
         [list_title, list_description, user_id])
         .then((result) => {
-            return queryPromise('SELECT * FROM list WHERE list_id = ? AND user_id = ?', [result.insertId, user_id]);
+            return db.queryPromise('SELECT * FROM list WHERE list_id = ? AND user_id = ?', [result.insertId, user_id]);
         })
         .then((insertedList) => {
             return resolve(insertedList[0]);
@@ -43,9 +43,9 @@ function remove(req) {
         let list_id = req.body.list_id;
         if(!list_id) throw new Error("Invalid input");
         
-        queryPromise('DELETE FROM list WHERE user_id = ? AND list_id = ?', [user_id, list_id])
+        db.queryPromise('DELETE FROM list WHERE user_id = ? AND list_id = ?', [user_id, list_id])
         .then(() => {
-            return queryPromise('DELETE FROM list_item WHERE list_id = ? AND user_id = ?', [list_id, user_id])
+            return db.queryPromise('DELETE FROM list_item WHERE list_id = ? AND user_id = ?', [list_id, user_id])
         })
         .then(() => {
             return resolve({"deleteId": list_id});
@@ -61,10 +61,10 @@ function getAll(req) {
         const id = req.user.user_id;
         let finalObj = [];
         let lists;
-        queryPromise('SELECT * FROM list WHERE user_id = ?', id)
+        db.queryPromise('SELECT * FROM list WHERE user_id = ?', id)
         .then((res) => {
             lists = res;
-            return queryPromise('SELECT * FROM list_item WHERE user_id = ?', id);
+            return db.('SELECT * FROM list_item WHERE user_id = ?', id);
         })
         .then((list_items) => {
             lists.forEach(list => {
@@ -94,18 +94,6 @@ function getAll(req) {
             return reject(new Error("Internal server error"));
         });
         
-    });
-}
-
-function queryPromise(sql, args) {
-    return new Promise((resolve, reject) => {
-        db.mysqlConnection.query(sql, args, (err, res, fields) => {
-            if (err) {
-                return reject(err);
-            } else {
-                return resolve(res);
-            }
-        });
     });
 }
 
