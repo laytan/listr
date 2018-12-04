@@ -74,8 +74,8 @@ export default {
                     return response.json();
                     }
                     return response.json().then((error) => {
-                    console.log(error);
-                    throw new Error(error);
+                        console.log(error);
+                    throw new Error(error.message);
                     });
                 })
                 .then((result) => {
@@ -85,8 +85,7 @@ export default {
                     this.$router.push('/dashboard');
                 })
                 .catch((error) => {
-                    this.errorMessage = error;
-                    console.log(error);
+                    this.errorMessage = error.message;
                 });
             }
         }

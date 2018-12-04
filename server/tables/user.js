@@ -1,5 +1,6 @@
 const db = require('../database/connection');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 function insert(name, hash) {
     return new Promise((resolve, reject) => {
@@ -27,16 +28,19 @@ function addToLoginAttempt(username) {
 function allowedToLogin(user) {
     console.log("Checking if the user is allowed to login");
     //Get the needed variables from the user object
-    const { updated, attempts } = user;
+    const { user_updated, user_attempts } = user;
+    console.log(`updated: ${user_updated}, attempts: ${user_attempts}`);
     //If we have ever set updated
-    if(updated) {
+    if(user_updated) {
+        console.log("Updated isset");
         const now = new Date().getTime();
         //The difference between now and the last time we updated in seconds
-        const difference = (now - updated) / 1000;
+        const difference = (now - user_updated) / 1000;
+        console.log(`Difference: ${difference}`);
         //If the last login attempt was more than 5 minutes ago, the login is valid
         if(difference > 300) return true;
         //If they tryed to login more than 5 times in a row, they are locked out
-        else if(attempts > 5) return difference;
+        else if(user_attempts > 5) return difference;
         //If that's not the case they can try logging in
         else return true;
     }    
@@ -44,29 +48,15 @@ function allowedToLogin(user) {
     else return true;
 }
 
-//Alphanumeric and digits, between 3 and 50 characters and no whitespace
-function validateName(name) {
-    if( ! name ) return false;
-    name = name.toString().trim();
-    //Must be alphanumeric or digits, no whitespace and be between 3 and 50 characters
-    const nameRegex = /^[a-zA-Z0-9]{3,50}$/;
-    return nameRegex.test(name);
-}
-
-//No whitespace and above 6 characters
-function validatePassword(password) {
-    if( ! password ) return false;
-    password = password.toString().trim();
-    const passRegex = /^[^\s]{6,}$/;
-    return passRegex.test(password);
-}
-
 function getUserByUserName(user_name) {
     return new Promise(async (resolve, reject) => {
-        [err, user] = await to(db.queryPromise('SELECT * FROM user WHERE user_name = ?', user_name));
-        if(err) return reject(err);
-
-        return resolve(user);
+        db.queryPromise('SELECT * FROM user WHERE user_name = ?', user_name)
+        .then((res) => {
+            return resolve(res);
+        })
+        .catch((err) => {
+            return reject(err);
+        });
     });
 }
 
@@ -93,9 +83,16 @@ function hashPassword(password) {
     });
 }
 
+function signToken(payload) {
+    return new Promise((resolve, reject) => {
+        jwt.sign(payload, process.env.SECRET, { expiresIn: '1d' }, (err, token) => {
+            if(err) return reject(err);
+            return resolve(token);
+        });
+    });
+}
+
 module.exports = {
-    validateName,
-    validatePassword,
     getUserByUserName,
     insert,
     hashPassword,

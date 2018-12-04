@@ -5,17 +5,18 @@ const bcrypt = require('bcrypt');
 
 const connection = require('../database/connection');
 const user = require('../tables/user');
+const validation = require('../validation');
 
 const signup = async (req, res, next) => {
     console.log('Request on signup');
     //Extract the needed variables
     const { user_name, user_password } = req.body;
     //Validate input
-    if(!user.validateName(user_name)) {
+    if(!validation.validateName(user_name)) {
         res.status(422);
         throw new Error("Username not valid.");
     }
-    if(!user.validatePassword(user_password)) {
+    if(!validation.validatePassword(user_password)) {
         res.status(422);
         throw new Error("Password is not valid.");
     }
@@ -52,41 +53,43 @@ const login = async (req, res, next) => {
     //Extract login fields
     const { user_name, user_password } = req.body;
     //Check if the input is valid
-    if(!user.validateName(user_name) || !user.validatePassword(user_password)) {
-        res.status(401);
-        throw new Error("Invalid credentials");
+    if(!validation.validateName(user_name) || !validation.validatePassword(user_password)) {
+        res.status(422);
+        throw new Error("Invalid credentials1");
     }
     //Check if the username is in use
     const userObj = await user.getUserByUserName(user_name);
     if(userObj.length != 1) {
-        res.status(401);
-        throw new Error("Invalid credentials");
+        res.status(422);
+        throw new Error("Invalid credentials2");
     }
-    const user = userObj[0];
+    const userToLogin = userObj[0];
+    console.log(userToLogin);
     //Check if the user is allowed to login (Time since last login / Is locked out)
     //Returns the time that the user can login next or true if the user is allowed
-    const allowedToLogin = user.allowedToLogin(user);
+    const allowedToLogin = user.allowedToLogin(userToLogin);
+    console.log(allowedToLogin);
     if(allowedToLogin !== true) {
-        res.status(400);
+        res.status(429);
         throw new Error(`Maximum login attempts reached.
         Please wait: ${allowedToLogin} seconds before trying again.`);
     }
 
     //Let bcrypt compare the password
-    const validPassword = await bcrypt.compare(user_password, user.user_hash);
+    const validPassword = await bcrypt.compare(user_password, userToLogin.user_hash);
     if(!validPassword) {
         //If it's not valid we add an attempt to the logins
         await user.addToLoginAttempt(user_name);
-        res.status(401);
-        throw new Error("Invalid credentials");
+        res.status(422);
+        throw new Error("Invalid credentials3");
     }
     //If it's valid we reset the attempts
     await user.resetAttempts(user_name);
 
     //Sign token with the payload and send it to the user
     const payload = {
-        "user_id": user.user_id,
-        "user_name": user.user_name,
+        "user_id": userToLogin.user_id,
+        "user_name": userToLogin.user_name,
     }
     const token = await user.signToken(payload);
     res.json({

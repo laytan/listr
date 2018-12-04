@@ -15,6 +15,7 @@ const jwt = require('jsonwebtoken');
 function ifTokenSetUser(req, res, next) {
     const authHeader = req.get('authorization');
     if (authHeader) {
+      console.log(`Authheader: ${authHeader}`);
       const token = authHeader.split(' ')[1];
       if (token) {
         jwt.verify(token, process.env.SECRET, (error, user) => {
@@ -45,7 +46,7 @@ function isAuthorized(req, res, next) {
     if(req.user) {
         next();
     } else {
-        res.status(501);
+        res.status(401);
         const error = new Error("Unauthorized request");
         next(error);
     }

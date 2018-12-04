@@ -23,7 +23,7 @@ const catchErrors = (fn) => {
 //Turns a sql query which uses callbacks into a promise based system
 function queryPromise(sql, args) {
     return new Promise((resolve, reject) => {
-        db.mysqlConnection.query(sql, args, (err, res, fields) => {
+        mysqlConnection.query(sql, args, (err, res, fields) => {
             if (err) {
                 return reject(err);
             } else {

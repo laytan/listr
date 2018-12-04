@@ -1,40 +1,58 @@
 const db = require('../database/connection');
 
-function create(req) {
-    return new Promise((resolve, reject) => {
-        //Get properties 
-        let { list_item_text, list_id } = req.body;
-        const user_id = req.user.user_id;
-
-        //Validate properties
-        if(!list_item_text || !list_id || !user_id) {
-            const error = new Error("Not all fieds are filled in.");
-            return reject(error);
-        }
-        list_item_text = list_item_text.toString().trim();
-        if(list_item_text.length > 250) {
-            const error = new Error("Text is too long.");
-            return reject(error);
-        }
-
-        //Insert
-        db.queryPromise('INSERT INTO list_item(list_item_text, list_id, user_id) VALUES(?,?,?);', [list_item_text, list_id, user_id])
-        .then((response) => {
-            list_item_id = response.insertId;
-            //Select the inserted list
-            return db.queryPromise('SELECT * FROM list_item WHERE list_item_id = ?', list_item_id);
-        })
-        .then((insertedListItem) => {
-            return resolve(insertedListItem[0]);
+//Deletes all list items that are a part of the list with list_id
+function removeAllListItemsByListId(list_id, user_id) {
+    return new Promise((resolve,reject) => {
+        db.queryPromise('DELETE FROM list_item WHERE list_id = ? AND user_id = ?', [list_id, user_id])
+        .then((res) => {
+            return resolve(res.affectedRows);
         })
         .catch((err) => {
-            console.log(err);
-            const error = new Error(err);
-            return reject(error);
+            return reject(err);
+        });
+    });
+}
+
+//Gets all the listitems that belong to the user
+function getByUserId(userId) {
+    return new Promise((resolve, reject) => {
+        db.queryPromise('SELECT * FROM list_item WHERE user_id = ?', userId)
+        .then((res) => {
+            return resolve(res);
+        })
+        .catch((err) => {
+            return reject(err);
+        });
+    });
+}
+
+function insert(text, list, user) {
+    return new Promise((resolve, reject) => {
+        db.queryPromise('INSERT INTO list_item(list_item_text, list_id, user_id) VALUES(?,?,?)', [text, list, user])
+        .then((res) => {
+            return resolve(res.insertId);
+        })
+        .catch((err) => {
+            return reject(err);
+        })
+    });
+}
+
+function getById(id) {
+    return new Promise((resolve, reject) => {
+        db.queryPromise('SELECT * FROM list_item WHERE list_item_id = ?', id)
+        .then((res) => {
+            return resolve(res[0]);
+        })
+        .catch((err) => {
+            return reject(err);
         });
     });
 }
 
 module.exports = {
-    create,
+    removeAllListItemsByListId,
+    getByUserId,
+    insert,
+    getById
 }

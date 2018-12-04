@@ -54,7 +54,7 @@
             <form>
               <div class="form-group">
                 <label for="text">Text</label>
-                <input type="text" v-model="newListItem.text" required
+                <input type="text" v-model="newListItem.text"
                 class="form-control" id="text"
                 placeholder="Text">
               </div>
@@ -80,7 +80,7 @@
         <p class="card-text">{{ list.description }}</p>
 
         <div class="list-group">
-          <div v-for="item in list.items" :key="item.list_item_id"
+          <div v-for="item in list.list_items" :key="item.list_item_id"
           class="list-group-item list-group-item-action">
             {{ item.list_item_text }}
             <button type="button" class="close" aria-label="Remove">
@@ -100,11 +100,11 @@
 </template>
 
 <script>
-  const GET_ALL_LISTS_URL = 'http://localhost:1234/authorized/lists/full';
+  const GET_ALL_LISTS_URL = 'http://localhost:1234/authorized/list/full';
   const VERIFY_URL = 'http://localhost:1234/authorized/verify';
-  const REMOVE_LIST_URL = 'http://localhost:1234/authorized/lists/remove';
-  const ADD_LIST_URL = 'http://localhost:1234/authorized/lists/create';
-  const ADD_LIST_ITEM_URL = 'http://localhost:1234/authorized/listitems/create';
+  const REMOVE_LIST_URL = 'http://localhost:1234/authorized/list/remove';
+  const ADD_LIST_URL = 'http://localhost:1234/authorized/list/create';
+  const ADD_LIST_ITEM_URL = 'http://localhost:1234/authorized/list/item/create';
   export default {
     data: () => ({
       user: {},
@@ -124,6 +124,10 @@
     }),
     mounted() {
       this.loading = true;
+      if(!localStorage.token) {
+        this.$router.push('/login');
+        return;
+      }
       fetch(VERIFY_URL, {
           headers: {
             authorization: `Bearer ${localStorage.token}`,
@@ -203,7 +207,7 @@
           })
           .catch((error) => {
             console.log(error);
-            this.errorMessage = error;
+            this.errorMessage = error.message;
             this.loading = false;
             this.newList = {
               title: '',
@@ -325,7 +329,7 @@
               });
             })
             .then((list_item) => {
-              this.lists[this.newListItem.list_array_index].items.unshift(list_item);
+              this.lists[this.newListItem.list_array_index].list_items.unshift(list_item);
 
               this.loading = false;
               this.newListItem = {
@@ -336,7 +340,7 @@
             })
             .catch((error) => {
               console.log(error);
-              this.errorMessage = error;
+              this.errorMessage = error.message;
 
               this.loading = false;
               this.newListItem = {
