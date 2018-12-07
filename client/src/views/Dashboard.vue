@@ -21,7 +21,7 @@
             </button>
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="">
               <div class="form-group">
                 <label for="title">Title</label>
                 <input type="text" v-model="newList.title" required class="form-control" id="title"
@@ -51,7 +51,7 @@
             </button>
           </div>
           <div class="modal-body">
-            <form>
+            <form @submit.prevent="">
               <div class="form-group">
                 <label for="text">Text</label>
                 <input type="text" v-model="newListItem.text"
@@ -68,7 +68,6 @@
       </div>
     </div>
     <h1 class="my-3">{{ user.username }}'s listss</h1>
-    <button type="button" class="btn btn-warning" @click="logout">Log out</button>
     <button type="button" class="btn btn-success" data-toggle="modal" data-target="#list-modal"
     >Add a list</button>
     <p v-if="loading">Loading...</p>
@@ -80,31 +79,32 @@
         <p class="card-text">{{ list.description }}</p>
 
         <div class="list-group">
-          <div v-for="item in list.list_items" :key="item.list_item_id"
+          <div v-for="(item, listIndex) in list.list_items" :key="item.list_item_id"
           class="list-group-item list-group-item-action">
             {{ item.list_item_text }}
-            <button type="button" class="close" aria-label="Remove">
+            <button type="button" class="close"
+            @click="removeItem(item.list_item_id, index, listIndex)"
+            aria-label="Remove">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
         </div>
-        <button type="button" class="btn btn-success" data-toggle="modal"
-        data-target="#list-item-modal" @click="onClickAddListItem(list.list_id, index)"
-        >Add item</button>
-        <button type="button" class="btn btn-outline-danger"
-         @click="removeList(list.list_id, index)">Remove
-          list</button>
+        <div class="btn-group mt-3" role="group" aria-label="list options">
+          <button type="button" class="btn btn-success" data-toggle="modal"
+          data-target="#list-item-modal" @click="onClickAddListItem(list.list_id, index)"
+          >Add item</button>
+          <button type="button" class="btn btn-outline-danger"
+           @click="removeList(list.list_id, index)">Remove
+            list</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  const GET_ALL_LISTS_URL = 'http://localhost:1234/authorized/list/full';
-  const VERIFY_URL = 'http://localhost:1234/authorized/verify';
-  const REMOVE_LIST_URL = 'http://localhost:1234/authorized/list/remove';
-  const ADD_LIST_URL = 'http://localhost:1234/authorized/list/create';
-  const ADD_LIST_ITEM_URL = 'http://localhost:1234/authorized/list/item/create';
+  const API_URL = 'http://192.168.2.44:1234';
+
   export default {
     data: () => ({
       user: {},
@@ -128,7 +128,7 @@
         this.$router.push('/login');
         return;
       }
-      fetch(VERIFY_URL, {
+      fetch(API_URL + '/authorized/verify', {
           headers: {
             authorization: `Bearer ${localStorage.token}`,
           },
@@ -154,6 +154,10 @@
         });
     },
     methods: {
+      logout() {
+        localStorage.removeItem('token');
+        this.$router.push('/login');
+      },
       addList() {
         this.errorMessage = '';
         this.succesMessage = '';
@@ -171,7 +175,7 @@
             list_description: this.newList.description,
           }
           this.loading = true;
-          fetch(ADD_LIST_URL, {
+          fetch(API_URL + '/authorized/list/create', {
             method: 'POST',
             body: JSON.stringify(body),
             headers: {
@@ -219,7 +223,7 @@
       getLists() {
         this.loading = true;
         this.errorMessage = '';
-        fetch(GET_ALL_LISTS_URL, {
+        fetch(API_URL + '/authorized/list/full', {
             headers: {
               authorization: `Bearer ${localStorage.token}`,
             },
@@ -241,10 +245,6 @@
             this.loading = false;
           });
       },
-      logout() {
-        localStorage.removeItem('token');
-        this.$router.push('/login');
-      },
       removeList(listId, arrIndex) {
         this.errorMessage = '';
         console.log(listId);
@@ -252,7 +252,7 @@
           "list_id": listId,
         }
         this.loading = true;
-        fetch(REMOVE_LIST_URL, {
+        fetch(API_URL + '/authorized/list/remove', {
             method: 'POST',
             body: JSON.stringify(body),
             headers: {
@@ -311,7 +311,7 @@
             console.log(body);
             this.loading = true;
             //Fetch
-            fetch(ADD_LIST_ITEM_URL, {
+            fetch(API_URL + '/authorized/list/item/create', {
               method: 'POST',
               body: JSON.stringify(body),
               headers: {
@@ -325,7 +325,7 @@
               }
               return response.json().then((error) => {
                 console.log(error);
-                throw new Error(error);
+                throw new Error(error.message);
               });
             })
             .then((list_item) => {
@@ -351,6 +351,43 @@
             });
           }
         }
+      },
+      removeItem(id, list_array_index, list_item_array_index) {
+        this.loading = true;
+        this.errorMessage = '';
+        this.succesMessage = '';
+
+        const body = {
+          list_item_id: id,
+        }
+
+        fetch(API_URL + '/authorized/list/item/remove', {
+          method: 'POST',
+          body: JSON.stringify(body),
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${localStorage.token}`,
+          },
+        })
+        .then((response) => {
+          if(response.ok) {
+            return response.json();
+          }
+          return response.json().then((error) => {
+            console.log(error);
+            throw new Error(error.message);
+          });
+        })
+        .then((res) => {
+          this.succesMessage = res.message;
+          this.loading = false;
+
+          this.lists[list_array_index].list_items.splice(list_item_array_index, 1);
+        })
+        .catch((err) => {
+          this.errorMessage = err.message;
+          this.loading = false;
+        });
       },
     },
   };
