@@ -13,7 +13,7 @@ const userRoutes = require('./routers/user-router');
 
 //Sets allowed origins
 app.use(cors({
-    origin: 'http://localhost:8081'
+    origin: process.env.ALLOWED_ORIGIN
 }));
 
 //Parses the body to json
@@ -42,7 +42,7 @@ function notFound(req, res, next) {
 }
 
 function errorHandler(err, req, res, next) {
-    console.log("Error handler");
+    console.log("Error handler", err);
     res.status(res.statusCode || 500);
     console.log(res.statusCode);
     res.json({
