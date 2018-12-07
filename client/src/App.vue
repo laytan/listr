@@ -24,6 +24,9 @@
             <router-link tag="li" to="/signup" class="nav-item">
               <a class="nav-link">Sign up</a>
             </router-link>
+            <li v-if="loggedIn" @click="logout" class="nav-item">
+              <a class="nav-link">Logout</a>
+            </li>
           </ul>
         </div>
       </div>
@@ -31,6 +34,24 @@
     <router-view />
   </div>
 </template>
+
+<script>
+export default {
+  methods: {
+    logout() {
+      localStorage.removeItem('token');
+      this.$router.push('/login');
+    },
+  },
+  computed: {
+    loggedIn: () => {
+      if(localStorage.getItem('token')) return true;
+      return false;
+    },
+  },
+}
+</script>
+
 
 <style>
 </style>
