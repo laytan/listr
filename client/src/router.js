@@ -3,6 +3,8 @@ import Router from 'vue-router';
 import Home from './views/Home.vue';
 import Signup from './views/Signup.vue';
 import Login from './views/Login.vue';
+import Profile from './views/Profile.vue';
+import Timeline from './views/Timeline.vue';
 /* eslint-disable-next-line */
 import Dashboard from './views/Dashboard.vue';
 
@@ -50,6 +52,18 @@ export default new Router({
       path: '/dashboard',
       name: 'dashboard',
       component: Dashboard,
+      beforeEnter: redirectIfNotLoggedIn,
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: Profile,
+      beforeEnter: redirectIfNotLoggedIn,
+    },
+    {
+      path: '/timeline',
+      name: 'timeline',
+      component: Timeline,
       beforeEnter: redirectIfNotLoggedIn,
     },
   ],
