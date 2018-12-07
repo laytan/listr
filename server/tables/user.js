@@ -40,7 +40,7 @@ function allowedToLogin(user) {
         //If the last login attempt was more than 5 minutes ago, the login is valid
         if(difference > 300) return true;
         //If they tryed to login more than 5 times in a row, they are locked out
-        else if(user_attempts > 5) return difference;
+        else if(user_attempts > 5) return (300 - difference);
         //If that's not the case they can try logging in
         else return true;
     }    
@@ -74,12 +74,15 @@ function getUserByUserName(user_name) {
 }*/
 
 function hashPassword(password) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const saltRounds = 15;
-        [err, hash] = await to(bcrypt.hash(password, saltRounds));
-        if(err) return reject(err);
-
-        return resolve(hash);
+        bcrypt.hash(password, saltRounds)
+        .then((hash) => {
+            return resolve(hash);
+        })
+        .catch((err) => {
+            return reject(err);
+        });
     });
 }
 

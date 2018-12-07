@@ -72,7 +72,7 @@ const login = async (req, res, next) => {
     if(allowedToLogin !== true) {
         res.status(429);
         throw new Error(`Maximum login attempts reached.
-        Please wait: ${allowedToLogin} seconds before trying again.`);
+        Please wait: ${allowedToLogin.toFixed(0)} seconds before trying again.`);
     }
 
     //Let bcrypt compare the password
