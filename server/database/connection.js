@@ -7,6 +7,7 @@ const mysqlConnection = mysql.createConnection({
     insecureAuth : true,
     database: 'listr',
     port: process.env.DATABASE_PORT,
+    charset: 'utf8mb4',
 });
 
 mysqlConnection.connect(function(err) {
