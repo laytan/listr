@@ -103,7 +103,7 @@
 </template>
 
 <script>
-  const API_URL = 'http://192.168.2.44:1234';
+  const API_URL = 'http://localhost:1234';
 
   export default {
     data: () => ({

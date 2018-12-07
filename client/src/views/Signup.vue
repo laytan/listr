@@ -37,7 +37,7 @@
 </template>
 
 <script>
-  const API_URL = 'http://192.168.2.44:1234';
+  const API_URL = 'http://localhost:1234';
   const usernameRegex = /^[a-zA-Z0-9]{3,50}$/;
   const passwordRegex = /^[^\s]{6,}$/;
   export default {
@@ -80,7 +80,7 @@
           console.log(body);
 
           //All looks to be valid
-          fetch(SIGNUP_URL + '/user/signup', {
+          fetch(API_URL + '/user/signup', {
             method: 'POST',
             body: JSON.stringify(body),
             headers: {

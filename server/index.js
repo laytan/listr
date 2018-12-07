@@ -11,6 +11,7 @@ const middleware = require('./middleware');
 const authorized = require('./routers/authorized');
 const userRoutes = require('./routers/user-router');
 
+console.log(process.env.ALLOWED_ORIGIN);
 //Sets allowed origins
 app.use(cors({
     origin: process.env.ALLOWED_ORIGIN

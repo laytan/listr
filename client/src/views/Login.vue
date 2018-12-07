@@ -26,7 +26,7 @@
 </template>
 
 <script>
-const API_URL = 'http://192.168.2.44:1234';
+const API_URL = 'http://localhost:1234';
 const usernameRegex = /^[a-zA-Z0-9]{3,50}$/;
 const passwordRegex = /^[^\s]{6,}$/;
 export default {
@@ -60,8 +60,8 @@ export default {
                     user_name: username,
                     user_password: password
                 };
-
-                fetch(LOGIN_URL + '/user/login', {
+                this.loading = true;
+                fetch(API_URL + '/user/login', {
                     method: 'POST',
                     body: JSON.stringify(body),
                     headers: {
@@ -85,6 +85,7 @@ export default {
                     this.$router.push('/dashboard');
                 })
                 .catch((error) => {
+                    this.loading = false;
                     this.errorMessage = error.message;
                 });
             }
