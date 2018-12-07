@@ -50,9 +50,22 @@ function getById(id) {
     });
 }
 
+function removeById(id, user_id) {
+    return new Promise((resolve, reject) => {
+        db.queryPromise('DELETE FROM list_item WHERE user_id = ? AND list_item_id = ?', [user_id, id])
+        .then((res) => {
+            return resolve(res.affectedRows);
+        })
+        .catch((err) => {
+            return reject(err);
+        });
+    });
+}
+
 module.exports = {
     removeAllListItemsByListId,
     getByUserId,
     insert,
-    getById
+    getById,
+    removeById
 }

@@ -73,7 +73,7 @@ const listCreate = async (req, res, next) => {
     console.log("Request on list create");
     //Extract needed properties
     const user_id = req.user.user_id;
-    const { list_title, list_description } = req.body;
+    let { list_title, list_description } = req.body;
     //Validate list title
     const listValidation = validation.minMax(list_title, "List title", 1, 200);
     if(listValidation != true) {
@@ -124,5 +124,18 @@ const listItemCreate = async (req, res, next) => {
     res.json(insertedItem);
 }
 router.post('/item/create', db.catchErrors(listItemCreate));
+
+//Removes a list item by id and verifies that it is coming from the author
+const listItemRemove = async (req, res, next) => {
+    const user_id = req.user.user_id;
+    const delete_id = req.body.list_item_id;
+    if(!user_id || !delete_id) {
+        res.status(422);
+        throw new Error("No item selected!");
+    }
+    const affectedRows = await listitem.removeById(delete_id, user_id);
+    res.json({"affectedRows": affectedRows, "message": "succes"});
+}
+router.post('/item/remove', db.catchErrors(listItemRemove));
 
 module.exports = router;
