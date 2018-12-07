@@ -15,16 +15,22 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarColor01">
           <ul class="navbar-nav mr-auto">
-            <router-link tag="li" to="/dashboard" class="nav-item">
-              <a class="nav-link">Dashboard</a>
+            <router-link v-if="loggedIn()" tag="li" to="/dashboard" class="nav-item">
+              <a class="nav-link">My lists</a>
             </router-link>
-            <router-link tag="li" to="/login" class="nav-item">
+            <router-link v-if="loggedIn()" tag="li" to="/profile" class="nav-item">
+              <a class="nav-link">Find friends</a>
+            </router-link>
+            <router-link v-if="loggedIn()" tag="li" to="/timeline" class="nav-item">
+              <a class="nav-link">Friends lists</a>
+            </router-link>
+            <router-link v-if="!loggedIn()" tag="li" to="/login" class="nav-item">
               <a class="nav-link">Login</a>
             </router-link>
-            <router-link tag="li" to="/signup" class="nav-item">
+            <router-link v-if="!loggedIn()" tag="li" to="/signup" class="nav-item">
               <a class="nav-link">Sign up</a>
             </router-link>
-            <li v-if="loggedIn" @click="logout" class="nav-item">
+            <li v-if="loggedIn()" @click="logout" class="nav-item">
               <a class="nav-link">Logout</a>
             </li>
           </ul>
@@ -42,14 +48,12 @@ export default {
       localStorage.removeItem('token');
       this.$router.push('/login');
     },
-  },
-  computed: {
-    loggedIn: () => {
-      if(localStorage.getItem('token')) return true;
+    loggedIn() {
+      if (localStorage.getItem('token')) return true;
       return false;
     },
   },
-}
+};
 </script>
 
 
