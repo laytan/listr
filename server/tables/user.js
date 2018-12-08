@@ -95,6 +95,20 @@ function signToken(payload) {
     });
 }
 
+function searchLike(toSearch, skip, limit) {
+    return new Promise((resolve, reject) => {
+        const searchQuery = '%' + toSearch + '%';
+    
+        db.queryPromise('SELECT user_name, user_id, user_created FROM user WHERE user_name LIKE ? LIMIT ? OFFSET ?', [searchQuery, limit, skip])
+        .then(res => {
+            return resolve(res);
+        })
+        .catch(err => {
+            return reject(err);
+        });
+    });
+}
+
 module.exports = {
     getUserByUserName,
     insert,
@@ -102,5 +116,6 @@ module.exports = {
     signToken,
     allowedToLogin,
     addToLoginAttempt,
-    resetAttempts
+    resetAttempts,
+    searchLike
 }

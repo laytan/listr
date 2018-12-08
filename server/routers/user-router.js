@@ -100,4 +100,38 @@ const login = async (req, res, next) => {
 //Handles login requests
 router.post('/login', connection.catchErrors(login));
 
+const search = async (req, res, next) => {
+    console.log("Request on search");
+    let { toSearch, skip, limit } = req.body;
+
+    toSearch = toSearch.toString().trim();
+    if(toSearch.length < 3) throw new Error("Search query needs at least 3 characters.");
+
+    skip = skip ? skip : 0;
+
+    limit = limit ? limit : 10;
+    limit = limit > 50 ? 30 : limit;
+
+    users = await user.searchLike(toSearch, skip, limit);
+    let returnBody;
+    if(users.length < 1) {
+        returnBody = {
+            "message": "No users match your search terms.", 
+            "toSearch": toSearch,
+            "skip": skip,
+            "limit": limit,
+        }
+    }
+    else {
+        returnBody = {
+            "toSearch": toSearch,
+            "skip": skip,
+            "limit": limit,
+            users,
+        }
+    }
+    res.json(returnBody);
+}
+router.post('/search', connection.catchErrors(search));
+
 module.exports = router;
