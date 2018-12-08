@@ -43,8 +43,9 @@ function notFound(req, res, next) {
 }
 
 function errorHandler(err, req, res, next) {
-    console.log("Error handler", err);
-    res.status(res.statusCode || 500);
+    console.log("Error handler", err.message);
+    if(res.statusCode == 200) res.status(500);
+    else res.status(res.statusCode);
     console.log(res.statusCode);
     res.json({
         message: err.message,
