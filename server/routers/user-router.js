@@ -11,6 +11,8 @@ const signup = async (req, res, next) => {
   if (!process.env.TEST) console.log("Request on signup");
   //Extract the needed variables
   const { user_name, user_password } = req.body;
+  const onlyValidate = req.body.only_validate;
+
   //Validate input
   if (!validation.validateName(user_name)) {
     res.status(422);
@@ -26,21 +28,34 @@ const signup = async (req, res, next) => {
     res.status(409);
     throw new Error("Username is in use.");
   }
-  //Hash the password
-  const hashedPassword = await user.hashPassword(user_password);
-  //Insert user in the db
-  const insertId = await user.insert(user_name, hashedPassword);
-  //Payload to be sent in the token
-  const payload = {
-    user_id: insertId,
-    user_name: user_name
-  };
-  //Make a token and respond with it
-  const token = await user.signToken(payload);
-  res.json({
-    token: token,
-    message: "Succesfully signed up!"
-  });
+
+  if (onlyValidate && process.env.TEST) {
+    res.json({
+      token: "asdwd23123123",
+      message: "Succesfully signed up!"
+    });
+  } else {
+    let hashedPassword;
+    if (process.env.TEST) {
+      //Hash the password
+      hashedPassword = await user.hashPassword(user_password, 1);
+    } else {
+      hashedPassword = await user.hashPassword(user_password);
+    }
+    //Insert user in the db
+    const insertId = await user.insert(user_name, hashedPassword);
+    //Payload to be sent in the token
+    const payload = {
+      user_id: insertId,
+      user_name: user_name
+    };
+    //Make a token and respond with it
+    const token = await user.signToken(payload);
+    res.json({
+      token: token,
+      message: "Succesfully signed up!"
+    });
+  }
 };
 //Handles sign up requests
 //connection.catcherrors basically returns the function we pass with a catch block

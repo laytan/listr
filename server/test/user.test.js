@@ -15,48 +15,68 @@ describe("POST: /user/signup", () => {
   };
 
   const userNoUserName = {
-    user_password: "1234567890"
+    user_password: "1234567890",
+    only_validate: true
   };
 
   const userNoUserPassword = {
-    user_name: "testtesttest"
+    user_name: "testtesttest",
+    only_validate: true
   };
 
   const userUserNameSpaces = {
-    user_name: "              "
+    user_name: "              ",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userUserPasswordSpacec = {
-    user_password: "              "
+    user_password: "              ",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userUserNameInvalidWithSpace = {
-    user_name: "testtest test"
+    user_name: "testtest test",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userUserNameInvalidWithCharacters = {
-    user_name: "testtest_*"
+    user_name: "testtest_*",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userUserNameToShort = {
-    user_name: "aa"
+    user_name: "aa",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userUserNameToLong = {
-    user_name: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST"
+    user_name: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTAAAAA",
+    user_password: "123456890",
+    only_validate: true
   };
 
   const userPasswordToLong = {
+    user_name: "testtesttest",
     user_password:
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST"
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST",
+    only_validate: true
   };
 
   const userPasswordInvalidWithSpace = {
-    user_password: "12332423 234"
+    user_name: "testtesttest",
+    user_password: "12332423 234",
+    only_validate: true
   };
 
   const userPasswordToShort = {
-    user_password: "12331"
+    user_name: "testtesttest",
+    user_password: "12331",
+    only_validate: true
   };
 
   it("Returns a 422 and not valid message when the username contains whitespace", done => {

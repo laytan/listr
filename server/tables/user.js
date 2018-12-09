@@ -82,9 +82,9 @@ function getUserByUserName(user_name) {
     });
 }*/
 
-function hashPassword(password) {
+function hashPassword(password, saltRounds) {
+  if (!saltRounds) saltRounds = 15;
   return new Promise((resolve, reject) => {
-    const saltRounds = 15;
     bcrypt
       .hash(password, saltRounds)
       .then(hash => {
